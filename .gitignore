@@ -26,6 +26,8 @@ tiktoken_cache
 .plans
 .claude
 .cursor
+.workbuddy
+.trae
 
 electron/node_modules
 electron/dist
