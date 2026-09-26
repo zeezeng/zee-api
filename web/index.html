@@ -13,7 +13,32 @@
       content="Unified AI API gateway and admin dashboard."
     />
 
-    <meta name="theme-color" content="#fff" />
+    <meta name="theme-color" content="#07090A" />
+    <script>
+      /* Applies the theme class before React mounts so the dark canvas never
+       * flashes white. Mirrors `theme-provider.tsx`: stored `light` / `dark`
+       * win, stored `system` follows the OS, and anything else (including no
+       * stored value) falls back to the dark-first default. */
+      ;(function () {
+        var mode = null
+        try {
+          mode = window.localStorage.getItem('newapi:theme:v1:mode')
+        } catch (error) {
+          mode = null
+        }
+        var resolved
+        if (mode === 'light' || mode === 'dark') {
+          resolved = mode
+        } else if (mode === 'system') {
+          resolved = window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+        } else {
+          resolved = 'dark'
+        }
+        document.documentElement.classList.add(resolved)
+      })()
+    </script>
     <!--umami-->
     <!--Google Analytics-->
   </head>

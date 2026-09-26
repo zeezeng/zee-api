@@ -134,6 +134,8 @@ export function TwoFASetupDialog(props: TwoFASetupDialogProps) {
                     'Scan this QR code with your authenticator app (Google Authenticator, Microsoft Authenticator, etc.)'
                   )}
                 </p>
+                {/* Kept on a white plate on purpose: authenticator apps need
+                    the QR quiet zone to stay light regardless of theme. */}
                 <div className='flex justify-center rounded-lg bg-white p-4'>
                   <QRCodeSVG value={props.setupData.qr_code_data} size={200} />
                 </div>

@@ -87,22 +87,18 @@ export function getBgColorClass(color?: string): string {
 }
 
 /**
- * Chart color palette - Modern gradient colors compatible with light/dark themes
- * Uses HSL format for better theme adaptation
+ * Chart color palette.
+ *
+ * Reads the semantic chart tokens instead of hard-coding hues, so every chart
+ * follows the active theme (light / dark) exactly like the rest of the UI.
+ * Consumers receive a `var(--chart-N)` reference that resolves at paint time.
  */
 export const CHART_COLORS = [
-  'hsl(217, 91%, 60%)', // blue
-  'hsl(142, 76%, 36%)', // green
-  'hsl(38, 92%, 50%)', // amber
-  'hsl(258, 90%, 66%)', // violet
-  'hsl(330, 81%, 60%)', // pink
-  'hsl(189, 94%, 43%)', // cyan
-  'hsl(25, 95%, 53%)', // orange
-  'hsl(239, 84%, 67%)', // indigo
-  'hsl(173, 80%, 40%)', // teal
-  'hsl(271, 91%, 65%)', // purple
-  'hsl(199, 89%, 48%)', // sky
-  'hsl(280, 65%, 60%)', // fuchsia
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
 ] as const
 
 /**

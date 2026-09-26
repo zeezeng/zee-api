@@ -292,25 +292,29 @@ For commercial licensing, please contact support@quantumnous.com
     background-image: radial-gradient(var(--tw-gradient-stops));
   }
 
-  /* Glass morphism effects - matching Launch UI template */
+  /* Glass morphism effects - matching Launch UI template.
+   * Dark uses a hairline ladder: a brighter top edge (the light catching the
+   * surface) against a dimmed bottom edge. The top alpha is deliberate — the
+   * dark canvas is near-black (#07090A), so a low-alpha highlight would be
+   * imperceptible. Light keeps its original soft borders. */
   .glass-1 {
-    @apply border-border from-card/80 to-card/40 dark:border-border/10 dark:border-b-border/5 dark:border-t-border/20 dark:from-card/5 dark:to-card/0 border bg-linear-to-b;
+    @apply border-border from-card/80 to-card/40 dark:border-border/10 dark:border-b-border/5 dark:border-t-border/40 dark:from-card/5 dark:to-card/0 border bg-linear-to-b;
   }
 
   .glass-2 {
-    @apply border-border from-card/100 to-card/80 dark:border-border/10 dark:border-b-border/5 dark:border-t-border/20 dark:from-card/10 dark:to-card/5 border bg-linear-to-b;
+    @apply border-border from-card/100 to-card/80 dark:border-border/10 dark:border-b-border/5 dark:border-t-border/40 dark:from-card/10 dark:to-card/5 border bg-linear-to-b;
   }
 
   .glass-3 {
-    @apply border-border from-card/30 to-card/20 dark:border-border/10 dark:border-t-border/20 dark:border-b-border/5 dark:from-primary/5 dark:to-primary/2 border bg-linear-to-b;
+    @apply border-border from-card/30 to-card/20 dark:border-border/10 dark:border-t-border/40 dark:border-b-border/5 dark:from-primary/5 dark:to-primary/2 border bg-linear-to-b;
   }
 
   .glass-4 {
-    @apply border-border border-b-input/90 from-card/60 to-card/20 dark:border-border/10 dark:border-t-border/30 dark:from-primary/10 dark:to-primary/5 border bg-linear-to-b dark:border-b-0;
+    @apply border-border border-b-input/90 from-card/60 to-card/20 dark:border-border/10 dark:border-t-border/50 dark:from-primary/10 dark:to-primary/5 border bg-linear-to-b dark:border-b-0;
   }
 
   .glass-5 {
-    @apply border-border border-b-input from-card/100 to-card/20 dark:border-border/10 dark:border-t-border/30 dark:from-primary/15 dark:to-primary/5 border bg-linear-to-b dark:border-b-0;
+    @apply border-border border-b-input from-card/100 to-card/20 dark:border-border/10 dark:border-t-border/50 dark:from-primary/15 dark:to-primary/5 border bg-linear-to-b dark:border-b-0;
   }
 
   /* Fade effects - matching Launch UI template */
@@ -557,6 +561,25 @@ For commercial licensing, please contact support@quantumnous.com
   }
 }
 
+/* Card top hairline. On the near-black canvas a 1px highlight along the top
+ * edge is what makes a card read as a raised surface rather than a flat
+ * rectangle. It is painted on a pseudo-element so it composes with whatever
+ * `shadow-*` utility a call site applies instead of replacing it. Light cards
+ * already separate from the near-white canvas through their ring, so they get
+ * no extra edge. */
+.dark [data-slot='card'] {
+  position: relative;
+}
+
+.dark [data-slot='card']::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: var(--hairline);
+  pointer-events: none;
+}
+
 /* Micro-interactions — Vercel-style subtle hover/active feedback */
 @media (prefers-reduced-motion: no-preference) {
   [data-slot='card']:not([data-card-hover='false']) {
@@ -568,11 +591,7 @@ For commercial licensing, please contact support@quantumnous.com
   @media (min-width: 641px) {
     [data-slot='card']:not([data-card-hover='false']):hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgb(0 0 0 / 0.06);
-    }
-
-    .dark [data-slot='card']:not([data-card-hover='false']):hover {
-      box-shadow: 0 4px 12px rgb(0 0 0 / 0.3);
+      box-shadow: var(--elev-3);
     }
   }
 
