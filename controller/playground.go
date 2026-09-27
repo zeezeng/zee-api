@@ -13,26 +13,44 @@ import (
 )
 
 func Playground(c *gin.Context) {
-	var newAPIError *types.NewAPIError
-
-	defer func() {
-		if newAPIError != nil {
-			c.JSON(newAPIError.StatusCode, gin.H{
-				"error": newAPIError.ToOpenAIError(),
-			})
-		}
-	}()
-
-	useAccessToken := c.GetBool("use_access_token")
-	if useAccessToken {
-		newAPIError = types.NewError(errors.New("暂不支持使用 access token"), types.ErrorCodeAccessDenied, types.ErrOptionWithSkipRetry())
+	if newAPIError := setupPlayground(c, types.RelayFormatOpenAI); newAPIError != nil {
+		c.JSON(newAPIError.StatusCode, gin.H{
+			"error": newAPIError.ToOpenAIError(),
+		})
 		return
 	}
 
-	relayInfo, err := relaycommon.GenRelayInfo(c, types.RelayFormatOpenAI, nil, nil)
-	if err != nil {
-		newAPIError = types.NewError(err, types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())
+	Relay(c, types.RelayFormatOpenAI)
+}
+
+// PlaygroundImage serves playground image generation. It runs the task plugin
+// endpoint bridge so models owned by an openai_image plugin are served by that
+// plugin, and falls back to the regular image relay otherwise.
+func PlaygroundImage(c *gin.Context) {
+	if newAPIError := setupPlayground(c, types.RelayFormatOpenAIImage); newAPIError != nil {
+		c.JSON(newAPIError.StatusCode, gin.H{
+			"error": newAPIError.ToOpenAIError(),
+		})
 		return
+	}
+
+	RelayTaskPluginEndpoint(c, func(c *gin.Context) {
+		Relay(c, types.RelayFormatOpenAIImage)
+	})
+}
+
+// setupPlayground prepares the session-backed relay context shared by the
+// playground endpoints: playground requests are authenticated by the browser
+// session, so they run on a synthetic token carrying the selected group.
+func setupPlayground(c *gin.Context, relayFormat types.RelayFormat) *types.NewAPIError {
+	useAccessToken := c.GetBool("use_access_token")
+	if useAccessToken {
+		return types.NewError(errors.New("暂不支持使用 access token"), types.ErrorCodeAccessDenied, types.ErrOptionWithSkipRetry())
+	}
+
+	relayInfo, err := relaycommon.GenRelayInfo(c, relayFormat, nil, nil)
+	if err != nil {
+		return types.NewError(err, types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())
 	}
 
 	userId := c.GetInt("id")
@@ -40,8 +58,7 @@ func Playground(c *gin.Context) {
 	// Write user context to ensure acceptUnsetRatio is available
 	userCache, err := model.GetUserCache(userId)
 	if err != nil {
-		newAPIError = types.NewError(err, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
-		return
+		return types.NewError(err, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
 	}
 	userCache.WriteContext(c)
 
@@ -52,5 +69,5 @@ func Playground(c *gin.Context) {
 	}
 	_ = middleware.SetupContextForToken(c, tempToken)
 
-	Relay(c, types.RelayFormatOpenAI)
+	return nil
 }

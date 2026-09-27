@@ -17,10 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
+import { type ChangeEvent, useRef } from 'react'
 import type { Resolver } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import * as z from 'zod'
 
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -38,22 +41,26 @@ import { FormNavigationGuard } from '../components/form-navigation-guard'
 import {
   SettingsForm,
   SettingsFormGrid,
-  SettingsFormGridItem,
 } from '../components/settings-form-layout'
 import { SettingsPageFormActions } from '../components/settings-page-context'
 import { SettingsSection } from '../components/settings-section'
 import { useSettingsForm } from '../hooks/use-settings-form'
 import { useUpdateOption } from '../hooks/use-update-option'
+import {
+  encodeLogoFile,
+  isValidLogoValue,
+  LOGO_FILE_ACCEPT,
+  LogoFileError,
+} from './logo-file'
 import { isValidTaskPublicAddress } from './task-public-address'
 
 const _systemInfoSchema = z.object({
   SystemName: z.string().min(1),
   ServerAddress: z.string().optional(),
   TaskPublicAddress: z.string().refine(isValidTaskPublicAddress),
-  Logo: z.string().url().optional().or(z.literal('')),
+  Logo: z.string().refine(isValidLogoValue),
   Footer: z.string().optional(),
   About: z.string().optional(),
-  HomePageContent: z.string().optional(),
   general_setting: z.object({
     docs_link: z.string(),
   }),
@@ -77,6 +84,7 @@ function normalizeValue(value: unknown): string {
 export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
   const { t } = useTranslation()
   const updateOption = useUpdateOption()
+  const logoFileInputRef = useRef<HTMLInputElement | null>(null)
 
   const normalizedDefaults: SystemInfoFormValues = {
     SystemName: normalizeValue(defaultValues.SystemName),
@@ -85,7 +93,6 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     Logo: normalizeValue(defaultValues.Logo),
     Footer: normalizeValue(defaultValues.Footer),
     About: normalizeValue(defaultValues.About),
-    HomePageContent: normalizeValue(defaultValues.HomePageContent),
     general_setting: {
       docs_link: normalizeValue(defaultValues.general_setting?.docs_link),
     },
@@ -106,10 +113,11 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
           'Enter an absolute HTTP(S) URL without credentials, query parameters, or fragments'
         ),
     }),
-    Logo: z.string().url().optional().or(z.literal('')),
+    Logo: z.string().refine(isValidLogoValue, {
+      error: () => t('Enter an HTTP(S) image URL or upload an image file'),
+    }),
     Footer: z.string().optional(),
     About: z.string().optional(),
-    HomePageContent: z.string().optional(),
     general_setting: z.object({
       docs_link: z.string(),
     }),
@@ -140,6 +148,26 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
         }
       },
     })
+
+  const handleLogoFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    try {
+      const dataUri = await encodeLogoFile(file)
+      form.setValue('Logo', dataUri, {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    } catch (error) {
+      if (!(error instanceof LogoFileError)) throw error
+      toast.error(
+        error.reason === 'too_large'
+          ? t('Logo file must be 100 KB or smaller')
+          : t('Unsupported image type. Use PNG, JPG, WebP, SVG, or ICO.')
+      )
+    }
+  }
 
   return (
     <>
@@ -226,9 +254,49 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
                         {...field}
                       />
                     </FormControl>
+                    <div className='flex items-center gap-3'>
+                      {field.value ? (
+                        <img
+                          src={field.value}
+                          alt={t('Logo URL')}
+                          className='h-10 w-10 rounded border object-contain p-1'
+                        />
+                      ) : null}
+                      <input
+                        ref={logoFileInputRef}
+                        type='file'
+                        accept={LOGO_FILE_ACCEPT}
+                        className='hidden'
+                        onChange={(event) => void handleLogoFileChange(event)}
+                      />
+                      <Button
+                        type='button'
+                        variant='outline'
+                        onClick={() => logoFileInputRef.current?.click()}
+                      >
+                        {t('Upload image')}
+                      </Button>
+                      {field.value ? (
+                        <Button
+                          type='button'
+                          variant='outline'
+                          onClick={() =>
+                            form.setValue('Logo', '', {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            })
+                          }
+                        >
+                          {t('Clear')}
+                        </Button>
+                      ) : null}
+                    </div>
                     <FormDescription>
                       {t('URL to your logo image (optional)')}
                     </FormDescription>
+                    <p className='text-muted-foreground text-xs'>
+                      {t('Supports PNG, JPG, WebP, SVG, or ICO, up to 100 KB.')}
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -301,31 +369,6 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
                   </FormItem>
                 )}
               />
-
-              <SettingsFormGridItem span='full'>
-                <FormField
-                  control={form.control}
-                  name='HomePageContent'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('Home Page Content')}</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder={t('Welcome to our New API...')}
-                          rows={6}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {t(
-                          'Content displayed on the home page (supports Markdown)'
-                        )}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </SettingsFormGridItem>
 
               <FormField
                 control={form.control}

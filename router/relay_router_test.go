@@ -89,6 +89,21 @@ func TestListModelsSupportsOpenAIAndGeminiAuthentication(t *testing.T) {
 	}
 }
 
+func TestPlaygroundRouterRegistersChatAndImageEndpoints(t *testing.T) {
+	setupRelayRouterTestDB(t)
+
+	engine := gin.New()
+	SetRelayRouter(engine)
+
+	registered := make(map[string]bool)
+	for _, route := range engine.Routes() {
+		registered[route.Method+" "+route.Path] = true
+	}
+
+	assert.True(t, registered["POST /pg/chat/completions"])
+	assert.True(t, registered["POST /pg/images/generations"])
+}
+
 func setupRelayRouterTestDB(t *testing.T) {
 	t.Helper()
 

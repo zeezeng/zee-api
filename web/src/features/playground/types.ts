@@ -116,6 +116,8 @@ export interface ChatCompletionResponse {
 }
 
 // Configuration types
+export type PlaygroundMode = 'chat' | 'image'
+
 export interface PlaygroundConfig {
   model: string
   group: string
@@ -148,4 +150,34 @@ export interface GroupOption {
   value: string
   ratio: number
   desc?: string
+}
+
+// Image generation types
+export interface ImageGenerationConfig {
+  model: string
+  size: string
+  quality: string
+  n: number
+}
+
+export interface ImageGenerationRequest {
+  model: string
+  group?: string
+  prompt: string
+  size?: string
+  quality?: string
+  n?: number
+}
+
+/**
+ * A single generated image, already resolved to a value an `<img>` can render.
+ * Base64 payloads are converted to data URLs so remote URLs and inline payloads
+ * share one rendering path.
+ */
+export interface GeneratedImage {
+  key: string
+  src: string
+  prompt?: string
+  remoteUrl?: string
+  revisedPrompt?: string
 }

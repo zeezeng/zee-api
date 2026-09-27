@@ -346,9 +346,9 @@ it('shows and removes a single provider override while retaining the per-call de
       },
     ]
   )
-  expect(
-    screen.getByRole('tab', { name: 'Per-request (deprecated)' })
-  ).toHaveAttribute('aria-selected', 'true')
+  // Legacy per-request drafts still render their own fields even though the
+  // deprecated mode picker is gone.
+  expect(screen.getByRole('textbox', { name: 'Fixed price' })).toBeVisible()
   const user = userEvent.setup()
   await user.click(screen.getByRole('tab', { name: 'Alpha' }))
   await user.click(
@@ -404,10 +404,6 @@ it('opens task expression pricing when only provider metadata supplies a schema'
     }))
   )
   await waitFor(() =>
-    expect(screen.getByRole('tab', { name: 'Expression' })).toHaveAttribute(
-      'aria-selected',
-      'true'
-    )
+    expect(screen.getByRole('textbox', { name: 'seconds' })).toBeVisible()
   )
-  expect(screen.getByRole('textbox', { name: 'seconds' })).toBeVisible()
 })

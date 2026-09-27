@@ -341,3 +341,28 @@ func TestSharedEndpointRebindsToBoundNewAPIExtension(t *testing.T) {
 	assert.Equal(t, "alpha", c.GetString("task_plugin_key"), "the first bound candidate executes regardless of the earlier pin")
 	assert.Equal(t, "alpha", c.MustGet(jsplugin.ContextKeyPinnedEndpoint).(jsplugin.PinnedEndpoint).Plugin.Meta.Key)
 }
+
+func TestGetModelRequestReadsPlaygroundImageBody(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	for _, path := range []string{"/pg/chat/completions", "/pg/images/generations"} {
+		t.Run(path, func(t *testing.T) {
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = httptest.NewRequest(
+				http.MethodPost,
+				path,
+				strings.NewReader(`{"model":"tt-image-2.5","prompt":"a cat","group":"vip","n":2}`),
+			)
+			c.Request.Header.Set("Content-Type", "application/json")
+
+			request, shouldSelectChannel, err := getModelRequest(c)
+
+			require.NoError(t, err)
+			require.NotNil(t, request)
+			assert.True(t, shouldSelectChannel)
+			assert.Equal(t, "tt-image-2.5", request.Model)
+			assert.Equal(t, "vip", request.Group)
+			assert.Equal(t, "vip", common.GetContextKeyString(c, constant.ContextKeyTokenGroup))
+		})
+	}
+}

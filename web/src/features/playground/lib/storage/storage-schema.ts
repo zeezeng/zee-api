@@ -45,6 +45,15 @@ export const parameterEnabledSchema = z.object({
   seed: z.boolean().optional(),
 })
 
+export const imageConfigSchema = z.object({
+  model: z.string().optional(),
+  size: z.string().optional(),
+  quality: z.string().optional(),
+  n: z.number().optional(),
+})
+
+export const playgroundModeSchema = z.enum(['chat', 'image'])
+
 const messageRoleSchema = z.enum(['user', 'assistant', 'system'])
 const messageStatusSchema = z.enum([
   'loading',

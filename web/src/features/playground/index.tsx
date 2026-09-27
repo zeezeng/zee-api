@@ -16,14 +16,27 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useCallback, useMemo, useState } from 'react'
+
 import { PlaygroundChat } from './components/chat/playground-chat'
+import { PlaygroundImage } from './components/image/playground-image'
 import { PlaygroundInput } from './components/input/playground-input'
+import { PlaygroundModeSwitch } from './components/playground-mode-switch'
+import { PLAYGROUND_MODES } from './constants'
 import {
   useChatHandler,
+  useImageGeneration,
   usePlaygroundConversation,
   usePlaygroundOptions,
   usePlaygroundState,
 } from './hooks'
+import {
+  getInitialImageConfig,
+  getInitialPlaygroundMode,
+  saveImageConfig,
+  savePlaygroundMode,
+} from './lib'
+import type { ImageGenerationConfig, PlaygroundMode } from './types'
 
 export function Playground() {
   const {
@@ -41,11 +54,52 @@ export function Playground() {
     clearMessages,
   } = usePlaygroundState()
 
+  const [mode, setMode] = useState<PlaygroundMode>(getInitialPlaygroundMode)
+  const [imageConfig, setImageConfig] = useState<ImageGenerationConfig>(
+    getInitialImageConfig
+  )
+
+  // Image mode shares the chat model selection until the user picks an image
+  // model, so the selector never starts out empty.
+  const effectiveImageConfig = useMemo(
+    () =>
+      imageConfig.model ? imageConfig : { ...imageConfig, model: config.model },
+    [imageConfig, config.model]
+  )
+
   const { sendChat, stopGeneration, isGenerating } = useChatHandler({
     config,
     parameterEnabled,
     onMessageUpdate: updateMessages,
   })
+
+  const {
+    images,
+    isGenerating: isGeneratingImage,
+    error: imageError,
+    generate: generateImage,
+    stop: stopImageGeneration,
+    clearImages,
+  } = useImageGeneration({ config: effectiveImageConfig, group: config.group })
+
+  const handleModeChange = useCallback((nextMode: PlaygroundMode) => {
+    setMode(nextMode)
+    savePlaygroundMode(nextMode)
+  }, [])
+
+  const updateImageConfig = useCallback(
+    <K extends keyof ImageGenerationConfig>(
+      key: K,
+      value: ImageGenerationConfig[K]
+    ) => {
+      setImageConfig((previous) => {
+        const updated = { ...previous, [key]: value }
+        saveImageConfig(updated)
+        return updated
+      })
+    },
+    []
+  )
 
   const {
     editingMessageKey,
@@ -76,45 +130,69 @@ export function Playground() {
 
   return (
     <div className='relative flex size-full min-h-0 flex-col overflow-hidden'>
-      {/* Full-width scroll container: scrolling works even over side whitespace */}
-      <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
-        <PlaygroundChat
-          messages={messages}
-          isLoadingMessages={isLoadingMessages}
-          onRegenerateMessage={handleRegenerateMessage}
-          onEditMessage={handleEditMessage}
-          onDeleteMessage={handleDeleteMessage}
-          onSelectPrompt={handleSendMessage}
-          isGenerating={isGenerating}
-          editingKey={editingMessageKey}
-          onCancelEdit={handleEditOpenChange}
-          onSaveEdit={(newContent) => applyEdit(newContent, false)}
-          onSaveEditAndSubmit={(newContent) => applyEdit(newContent, true)}
-        />
+      <div className='shrink-0 pt-2 pb-3'>
+        <PlaygroundModeSwitch onChange={handleModeChange} value={mode} />
       </div>
 
-      {/* Input area: center content and constrain to the same container width */}
-      <div className='mx-auto w-full max-w-4xl'>
-        <PlaygroundInput
-          config={config}
-          disabled={isGenerating}
-          groups={groups}
+      {mode === PLAYGROUND_MODES.IMAGE ? (
+        <PlaygroundImage
+          config={effectiveImageConfig}
+          error={imageError}
           groupValue={config.group}
-          isGenerating={isGenerating}
+          groups={groups}
+          images={images}
+          isGenerating={isGeneratingImage}
           isModelLoading={isLoadingModels}
-          modelValue={config.model}
           models={models}
+          onClearImages={clearImages}
+          onConfigChange={updateImageConfig}
+          onGenerate={generateImage}
           onGroupChange={(value) => updateConfig('group', value)}
-          onConfigChange={updateConfig}
-          onClearMessages={handleClearMessages}
-          onModelChange={(value) => updateConfig('model', value)}
-          onParameterEnabledChange={updateParameterEnabled}
-          onStop={stopGeneration}
-          onSubmit={handleSendMessage}
-          parameterEnabled={parameterEnabled}
-          hasMessages={messages.length > 0}
+          onStop={stopImageGeneration}
         />
-      </div>
+      ) : (
+        <>
+          {/* Full-width scroll container: scrolling works even over side whitespace */}
+          <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
+            <PlaygroundChat
+              messages={messages}
+              isLoadingMessages={isLoadingMessages}
+              onRegenerateMessage={handleRegenerateMessage}
+              onEditMessage={handleEditMessage}
+              onDeleteMessage={handleDeleteMessage}
+              onSelectPrompt={handleSendMessage}
+              isGenerating={isGenerating}
+              editingKey={editingMessageKey}
+              onCancelEdit={handleEditOpenChange}
+              onSaveEdit={(newContent) => applyEdit(newContent, false)}
+              onSaveEditAndSubmit={(newContent) => applyEdit(newContent, true)}
+            />
+          </div>
+
+          {/* Input area: center content and constrain to the same container width */}
+          <div className='mx-auto w-full max-w-4xl'>
+            <PlaygroundInput
+              config={config}
+              disabled={isGenerating}
+              groups={groups}
+              groupValue={config.group}
+              isGenerating={isGenerating}
+              isModelLoading={isLoadingModels}
+              modelValue={config.model}
+              models={models}
+              onGroupChange={(value) => updateConfig('group', value)}
+              onConfigChange={updateConfig}
+              onClearMessages={handleClearMessages}
+              onModelChange={(value) => updateConfig('model', value)}
+              onParameterEnabledChange={updateParameterEnabled}
+              onStop={stopGeneration}
+              onSubmit={handleSendMessage}
+              parameterEnabled={parameterEnabled}
+              hasMessages={messages.length > 0}
+            />
+          </div>
+        </>
+      )}
     </div>
   )
 }

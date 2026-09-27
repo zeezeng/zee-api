@@ -501,7 +501,7 @@ function CodeSamplesSection(props: {
 
       <div className='flex flex-wrap items-center gap-2'>
         {endpoints.length > 1 && (
-          <Tabs value={endpointType} onValueChange={setEndpointType}>
+          <Tabs value={activeEndpoint.type} onValueChange={setEndpointType}>
             <TabsList className='bg-muted/40 h-8 p-0.5'>
               {endpoints.map((ep) => (
                 <TabsTrigger

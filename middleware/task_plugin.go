@@ -361,7 +361,8 @@ func PinTaskPluginEndpoint() gin.HandlerFunc {
 				rewriteTo = target.Alias
 			}
 		}
-		binding, found := generation.LookupEndpoint(c.Request.Method, c.Request.URL.Path, lookupModel)
+		routePath := relayconstant.RelayRequestPath(c.Request.URL.Path)
+		binding, found := generation.LookupEndpoint(c.Request.Method, routePath, lookupModel)
 		if !found || binding.Plugin == nil {
 			c.Set(contextKeyTaskPluginEndpointModel, *modelRequest)
 			c.Next()
@@ -375,7 +376,7 @@ func PinTaskPluginEndpoint() gin.HandlerFunc {
 		}
 		modelRequest.Model = pinModel
 		c.Set(contextKeyTaskPluginEndpointModel, *modelRequest)
-		candidates := generation.LookupEndpointCandidates(c.Request.Method, c.Request.URL.Path, lookupModel)
+		candidates := generation.LookupEndpointCandidates(c.Request.Method, routePath, lookupModel)
 		if len(candidates) == 0 {
 			candidates = []pluginruntime.ProtocolBinding{binding}
 		}

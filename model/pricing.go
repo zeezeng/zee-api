@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -255,24 +256,38 @@ func updatePricing() {
 		modelSupportEndpointsStr[ability.Model] = endpoints
 	}
 
-	// 再补充模型自定义端点：若配置有效则追加到已有推断，不再裁剪渠道真实能力
+	// 再合并模型自定义端点：模型目录里显式声明的端点就是「向用户展示的端点类型」，
+	// 它比渠道类型的推断更具体，所以排在推断结果之前作为首选端点；渠道真实能力仍
+	// 然保留在后面，不做裁剪。
 	for modelName, meta := range metaMap {
 		if strings.TrimSpace(meta.Endpoints) == "" {
 			continue
 		}
 		var raw map[string]any
-		if err := common.Unmarshal([]byte(meta.Endpoints), &raw); err == nil {
-			endpoints := modelSupportEndpointsStr[modelName]
-			for k, v := range raw {
-				switch v.(type) {
-				case string, map[string]any:
-					endpoints = appendPricingEndpoint(endpoints, k)
-				}
-			}
-			if len(endpoints) > 0 {
-				modelSupportEndpointsStr[modelName] = endpoints
+		if err := common.Unmarshal([]byte(meta.Endpoints), &raw); err != nil {
+			continue
+		}
+		declared := make([]string, 0, len(raw))
+		for k, v := range raw {
+			switch v.(type) {
+			case string, map[string]any:
+				declared = append(declared, k)
 			}
 		}
+		if len(declared) == 0 {
+			continue
+		}
+		// raw 是 map，遍历顺序随机；排序保证首选端点可复现。
+		sort.Strings(declared)
+		inferred := modelSupportEndpointsStr[modelName]
+		endpoints := make([]string, 0, len(declared)+len(inferred))
+		for _, k := range declared {
+			endpoints = appendPricingEndpoint(endpoints, k)
+		}
+		for _, k := range inferred {
+			endpoints = appendPricingEndpoint(endpoints, k)
+		}
+		modelSupportEndpointsStr[modelName] = endpoints
 	}
 
 	modelSupportEndpointTypes = make(map[string][]constant.EndpointType)

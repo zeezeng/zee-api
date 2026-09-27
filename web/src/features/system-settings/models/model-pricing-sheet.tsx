@@ -60,7 +60,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 import {
   previewModelPricing,
   previewModelPricingConversion,
@@ -923,24 +923,16 @@ export const ModelPricingEditorPanel = forwardRef<
                   }
                   currency={currency}
                 >
+                  {/* Legacy per-token/per-request pricing is deprecated, so the
+                      mode picker only offered deprecated choices. The Tabs root
+                      stays to keep rendering an existing legacy draft (with the
+                      migration alert below) until it is converted. */}
                   <Tabs
                     key={editorReloadToken}
                     value={pricingMode}
                     onValueChange={handleModeChange}
                     className='gap-4'
                   >
-                    <TabsList className='grid w-full grid-cols-3'>
-                      <TabsTrigger value='tiered_expr'>
-                        {t('Expression')}
-                      </TabsTrigger>
-                      <TabsTrigger value='per-token'>
-                        {t('Per-token (deprecated)')}
-                      </TabsTrigger>
-                      <TabsTrigger value='per-request'>
-                        {t('Per-request (deprecated)')}
-                      </TabsTrigger>
-                    </TabsList>
-
                     {pricingMode !== 'tiered_expr' && (
                       <Alert className='border-amber-500/40 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-100'>
                         <AlertTriangle aria-hidden='true' className='size-5' />

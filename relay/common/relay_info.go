@@ -294,7 +294,7 @@ func (info *RelayInfo) InitChannelMeta(c *gin.Context) {
 	if channelType == constant.ChannelTypeAdvancedCustom &&
 		!channelMeta.ChannelSetting.PassThroughBodyEnabled &&
 		c.Request != nil && c.Request.URL != nil {
-		route, matched := channelMeta.ChannelOtherSettings.AdvancedCustom.MatchPathForModel(c.Request.URL.Path, info.OriginModelName)
+		route, matched := channelMeta.ChannelOtherSettings.AdvancedCustom.MatchPathForModel(relayconstant.RelayRequestPath(c.Request.URL.Path), info.OriginModelName)
 		if matched && route.PassThroughBodyEnabled {
 			channelMeta.ChannelSetting.PassThroughBodyEnabled = true
 		}
@@ -631,10 +631,14 @@ func genBaseRelayInfo(c *gin.Context, request dto.Request) *RelayInfo {
 		info.RelayMode = c.GetInt("relay_mode")
 	}
 
-	if strings.HasPrefix(c.Request.URL.Path, "/pg") {
+	// Playground requests are served under /pg but relayed to the upstream /v1
+	// surface, so keep the query string while swapping the prefix.
+	if relayPath := relayconstant.RelayRequestPath(c.Request.URL.Path); relayPath != c.Request.URL.Path {
 		info.IsPlayground = true
-		info.RequestURLPath = strings.TrimPrefix(info.RequestURLPath, "/pg")
-		info.RequestURLPath = "/v1" + info.RequestURLPath
+		info.RequestURLPath = relayPath
+		if c.Request.URL.RawQuery != "" {
+			info.RequestURLPath += "?" + c.Request.URL.RawQuery
+		}
 	}
 
 	userSetting, ok := common.GetContextKeyType[dto.UserSetting](c, constant.ContextKeyUserSetting)

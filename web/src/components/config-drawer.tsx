@@ -403,16 +403,18 @@ function ScalePreview(props: { rows: number; rowGap: string }) {
 function ScaleConfig() {
   const { t } = useTranslation()
   const { defaults, customization, setScale } = useThemeCustomization()
+  // Order matters: the shipped default (`lg` / Comfortable) leads the picker
+  // so the default choice is the first one users see.
   const scaleOptions: {
     value: ThemeScale
     label: string
     rows: number
     rowGap: string
   }[] = [
+    { value: 'lg', label: t('Comfortable'), rows: 2, rowGap: '10px' },
     { value: 'xl', label: t('Super Large'), rows: 1, rowGap: '14px' },
     { value: 'sm', label: t('Compact'), rows: 4, rowGap: '3px' },
     { value: 'default', label: t('Default'), rows: 3, rowGap: '6px' },
-    { value: 'lg', label: t('Comfortable'), rows: 2, rowGap: '10px' },
   ]
   return (
     <div>

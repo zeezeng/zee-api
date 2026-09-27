@@ -110,7 +110,7 @@ describe('theme preference persistence', () => {
     expect(document.documentElement).toHaveClass('dark')
     expect(document.body).toHaveAttribute('data-theme-font', 'sans')
     expect(document.body).not.toHaveAttribute('data-theme-radius')
-    expect(document.body).toHaveAttribute('data-theme-scale', 'xl')
+    expect(document.body).toHaveAttribute('data-theme-scale', 'lg')
     expect(document.body).toHaveAttribute('data-theme-content-layout', 'full')
   })
 
@@ -154,7 +154,7 @@ describe('theme preference persistence', () => {
     expect(document.documentElement).toHaveClass('dark')
     expect(document.body).toHaveAttribute('data-theme-font', 'sans')
     expect(document.body).not.toHaveAttribute('data-theme-radius')
-    expect(document.body).toHaveAttribute('data-theme-scale', 'xl')
+    expect(document.body).toHaveAttribute('data-theme-scale', 'lg')
     expect(document.body).toHaveAttribute('data-theme-content-layout', 'full')
     for (const key of Object.keys(savedPreferences)) {
       expect(localStorage.getItem(key)).toBeNull()
@@ -175,7 +175,7 @@ describe('theme preference persistence', () => {
       expect(screen.getByLabelText('Theme mode')).toHaveTextContent('dark')
       expect(document.body).toHaveAttribute('data-theme-font', 'sans')
       expect(document.body).not.toHaveAttribute('data-theme-radius')
-      expect(document.body).toHaveAttribute('data-theme-scale', 'xl')
+      expect(document.body).toHaveAttribute('data-theme-scale', 'lg')
       expect(document.body).toHaveAttribute('data-theme-content-layout', 'full')
     }
   )

@@ -16,7 +16,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type { PlaygroundConfig, ParameterEnabled } from './types'
+import type {
+  ImageGenerationConfig,
+  PlaygroundConfig,
+  ParameterEnabled,
+} from './types'
 
 // Message constants
 export const MESSAGE_ROLES = {
@@ -35,6 +39,7 @@ export const MESSAGE_STATUS = {
 // API endpoints
 export const API_ENDPOINTS = {
   CHAT_COMPLETIONS: '/pg/chat/completions',
+  IMAGE_GENERATIONS: '/pg/images/generations',
   USER_MODELS: '/api/user/models',
   USER_GROUPS: '/api/user/self/groups',
 } as const
@@ -42,6 +47,13 @@ export const API_ENDPOINTS = {
 // Default group — uses 'default' as the safe fallback; auto-group is
 // only selected when the backend confirms it is available for the user.
 export const DEFAULT_GROUP = 'default' as const
+
+// Playground surfaces. Chat is the entry mode so an existing session keeps
+// landing where it always did.
+export const PLAYGROUND_MODES = {
+  CHAT: 'chat',
+  IMAGE: 'image',
+} as const
 
 // Default configuration
 export const DEFAULT_CONFIG: PlaygroundConfig = {
@@ -70,7 +82,43 @@ export const STORAGE_KEYS = {
   CONFIG: 'playground_config',
   MESSAGES: 'playground_messages',
   PARAMETER_ENABLED: 'playground_parameter_enabled',
+  IMAGE_CONFIG: 'playground_image_config',
+  MODE: 'playground_mode',
 } as const
+
+/**
+ * Sentinel for "let the upstream pick". It is never sent on the wire, which
+ * matters because upstreams reject quality values they do not recognize while
+ * still applying their own default when the field is absent.
+ */
+export const IMAGE_QUALITY_ANY = 'any'
+
+// Image generation defaults. `size`/`quality` follow the OpenAI image API and
+// are sent as-is; upstreams reject values they do not support.
+export const DEFAULT_IMAGE_CONFIG: ImageGenerationConfig = {
+  model: '',
+  size: '1024x1024',
+  quality: IMAGE_QUALITY_ANY,
+  n: 1,
+}
+
+export const IMAGE_SIZE_PRESETS = [
+  '1024x1024',
+  '1536x1024',
+  '1024x1536',
+  '512x512',
+  'auto',
+] as const
+
+export const IMAGE_QUALITY_OPTIONS = [
+  { value: IMAGE_QUALITY_ANY, label: 'Upstream default' },
+  { value: 'auto', label: 'Auto' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+] as const
+
+export const MAX_IMAGE_N = 10
 
 // Error messages
 export const ERROR_MESSAGES = {
@@ -80,6 +128,7 @@ export const ERROR_MESSAGES = {
   STREAM_START_ERROR: 'Error establishing connection',
   CONNECTION_CLOSED: 'Connection closed',
   INTERRUPTED: 'Generation was interrupted',
+  IMAGE_EMPTY_RESPONSE: 'The model returned no images',
 } as const
 
 // Message action button styles

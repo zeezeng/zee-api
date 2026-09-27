@@ -48,10 +48,17 @@ export type ThemeCustomization = {
   contentLayout: ContentLayout
 }
 
+/**
+ * Shipped defaults.
+ *
+ * `scale` defaults to `lg` (Comfortable) rather than `xl`: comfortable
+ * density is the preferred out-of-the-box rhythm, so the matching preset
+ * also leads the density picker in the customization drawer.
+ */
 export const DEFAULT_THEME_CUSTOMIZATION: ThemeCustomization = {
   font: 'sans',
   radius: 'default',
-  scale: 'xl',
+  scale: 'lg',
   contentLayout: 'full',
 }
 

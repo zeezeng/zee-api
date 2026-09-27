@@ -107,6 +107,8 @@ func TestPricingAdvancedCustomUsesConfiguredEndpointTypes(t *testing.T) {
 	}, byModel["gpt-4o"])
 }
 
+// Declared model endpoints are the endpoint types the catalog shows to users,
+// so they lead the list while the channel-inferred ones stay available.
 func TestPricingModelMetadataEndpointsMergeWithAdvancedCustomInference(t *testing.T) {
 	resetPricingEndpointTestTables(t)
 
@@ -131,9 +133,37 @@ func TestPricingModelMetadataEndpointsMergeWithAdvancedCustomInference(t *testin
 	byModel := pricingEndpointTypesByModel(t)
 
 	assert.Equal(t, []constant.EndpointType{
-		constant.EndpointTypeOpenAIResponse,
 		constant.EndpointTypeOpenAI,
+		constant.EndpointTypeOpenAIResponse,
 	}, byModel["gemini-2.5-flash"])
+}
+
+// A NewAPI aggregator channel claims every text protocol for each of its
+// models, so the declared image endpoint has to come first for the catalog to
+// keep showing an image model as an image model.
+func TestPricingDeclaredImageEndpointLeadsAggregatorChannelInference(t *testing.T) {
+	resetPricingEndpointTestTables(t)
+
+	insertPricingEndpointChannel(t, 105, constant.ChannelTypeNewAPI, dto.ChannelOtherSettings{})
+	insertPricingEndpointAbility(t, 105, "tt-image-2.5")
+	require.NoError(t, DB.Create(&Model{
+		ModelName: "tt-image-2.5",
+		Endpoints: `{
+			"image-generation": {
+				"path": "/v1/images/generations",
+				"method": "POST"
+			}
+		}`,
+		Status:   1,
+		NameRule: NameRuleExact,
+	}).Error)
+
+	byModel := pricingEndpointTypesByModel(t)
+
+	endpoints := byModel["tt-image-2.5"]
+	require.NotEmpty(t, endpoints)
+	assert.Equal(t, constant.EndpointTypeImageGeneration, endpoints[0])
+	assert.Contains(t, endpoints, constant.EndpointTypeOpenAI)
 }
 
 func TestPricingModelMetadataEndpointsCanProvideEndpointWithoutChannelInference(t *testing.T) {
@@ -171,6 +201,38 @@ func TestPricingAdvancedCustomMissingConfigFallsBackToChannelType(t *testing.T) 
 	byModel := pricingEndpointTypesByModel(t)
 
 	assert.Equal(t, []constant.EndpointType{constant.EndpointTypeOpenAI}, byModel["gpt-4o"])
+}
+
+// An Advanced Custom channel derives its endpoint types from its configured
+// routes, so declaring only the image route is what makes the catalog show an
+// image model as image-only. Aggregator channels cannot express this because
+// they always infer the full text protocol set.
+func TestPricingAdvancedCustomImageRouteYieldsOnlyImageEndpoint(t *testing.T) {
+	resetPricingEndpointTestTables(t)
+
+	insertPricingEndpointChannel(t, 106, constant.ChannelTypeAdvancedCustom, pricingEndpointAdvancedCustomConfig(
+		dto.AdvancedCustomRoute{
+			IncomingPath: "/v1/images/generations",
+			UpstreamPath: "/v1/images/generations",
+			Converter:    "none",
+		},
+	))
+	insertPricingEndpointAbility(t, 106, "tt-image-2.5")
+	require.NoError(t, DB.Create(&Model{
+		ModelName: "tt-image-2.5",
+		Endpoints: `{
+			"image-generation": {
+				"path": "/v1/images/generations",
+				"method": "POST"
+			}
+		}`,
+		Status:   1,
+		NameRule: NameRuleExact,
+	}).Error)
+
+	byModel := pricingEndpointTypesByModel(t)
+
+	assert.Equal(t, []constant.EndpointType{constant.EndpointTypeImageGeneration}, byModel["tt-image-2.5"])
 }
 
 func TestPricingNativeChannelEndpointTypesUnchanged(t *testing.T) {

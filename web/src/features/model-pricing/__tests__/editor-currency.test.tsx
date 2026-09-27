@@ -218,10 +218,7 @@ it('previews legacy conversion in the selected currency and applies only after c
     .setup()
     .click(within(dialog).getByRole('button', { name: 'Apply to draft' }))
   await waitFor(() =>
-    expect(screen.getByRole('tab', { name: 'Expression' })).toHaveAttribute(
-      'aria-selected',
-      'true'
-    )
+    expect(screen.getByRole('textbox', { name: 'Tier name' })).toBeVisible()
   )
   expect(preview).toHaveBeenCalledWith('/api/option/model_pricing/convert', {
     model_name: 'currency-model',
@@ -239,12 +236,6 @@ it('previews legacy conversion in the selected currency and applies only after c
     ratio: '1',
     cacheRatio: '0',
   })
-  await userEvent
-    .setup()
-    .click(screen.getByRole('tab', { name: 'Per-token (deprecated)' }))
-  expect(
-    screen.getByRole('button', { name: 'Convert to expression' })
-  ).toBeDisabled()
 })
 
 it.each([
@@ -563,10 +554,7 @@ it('opens expression pricing by default when an existing model has no configured
     completionRatio: '',
     billingMode: 'per-token',
   })
-  expect(screen.getByRole('tab', { name: 'Expression' })).toHaveAttribute(
-    'aria-selected',
-    'true'
-  )
+  expect(screen.getByRole('textbox', { name: 'Tier name' })).toBeVisible()
   expect(editor.dirty).toHaveBeenLastCalledWith(false)
 })
 

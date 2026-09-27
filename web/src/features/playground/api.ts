@@ -20,9 +20,12 @@ import { api } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
 import { API_ENDPOINTS } from './constants'
+import { parseImageGenerationResponse } from './lib'
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
+  GeneratedImage,
+  ImageGenerationRequest,
   ModelOption,
   GroupOption,
 } from './types'
@@ -39,6 +42,20 @@ export async function sendChatCompletion(
     skipErrorHandler: true,
   } as Record<string, unknown>)
   return res.data
+}
+
+/**
+ * Send image generation request and return renderable images
+ */
+export async function generateImages(
+  payload: ImageGenerationRequest,
+  signal?: AbortSignal
+): Promise<GeneratedImage[]> {
+  const res = await api.post(API_ENDPOINTS.IMAGE_GENERATIONS, payload, {
+    signal,
+    skipErrorHandler: true,
+  } as Record<string, unknown>)
+  return parseImageGenerationResponse(res.data)
 }
 
 /**

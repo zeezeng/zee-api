@@ -238,6 +238,15 @@ function createOpenAINativeRoutes(): AdvancedCustomRoute[] {
   }))
 }
 
+function createOpenAIImageRoutes(): AdvancedCustomRoute[] {
+  return ['/v1/images/generations', '/v1/images/edits'].map((path) => ({
+    incoming_path: path,
+    upstream_path: path,
+    converter: 'none',
+    auth: bearerHeaderAuth(),
+  }))
+}
+
 function createClaudeNativeRoutes(): AdvancedCustomRoute[] {
   return [
     {
@@ -290,6 +299,13 @@ export const ADVANCED_CUSTOM_TEMPLATE_OPTIONS: AdvancedCustomTemplateOption[] =
       label: 'OpenAI only',
       config: {
         advanced_routes: createOpenAINativeRoutes(),
+      },
+    },
+    {
+      value: 'openai_image_only',
+      label: 'OpenAI Image only',
+      config: {
+        advanced_routes: createOpenAIImageRoutes(),
       },
     },
     {

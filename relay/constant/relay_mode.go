@@ -51,9 +51,23 @@ const (
 	RelayModeAlphaSearch
 )
 
+// RelayRequestPath maps a request path to the path the relay forwards upstream.
+// Playground requests are served under /pg but relayed under /v1, so every
+// path-based classification (relay mode, task plugin endpoint, advanced custom
+// route) must run on the normalized path. Paths outside the playground prefix
+// are returned unchanged.
+func RelayRequestPath(path string) string {
+	rest, ok := strings.CutPrefix(path, "/pg/")
+	if !ok {
+		return path
+	}
+	return "/v1/" + rest
+}
+
 func Path2RelayMode(path string) int {
+	path = RelayRequestPath(path)
 	relayMode := RelayModeUnknown
-	if strings.HasPrefix(path, "/v1/chat/completions") || strings.HasPrefix(path, "/pg/chat/completions") {
+	if strings.HasPrefix(path, "/v1/chat/completions") {
 		relayMode = RelayModeChatCompletions
 	} else if strings.HasPrefix(path, "/v1/completions") {
 		relayMode = RelayModeCompletions

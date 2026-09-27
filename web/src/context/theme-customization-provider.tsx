@@ -128,7 +128,7 @@ export function ThemeCustomizationProvider(props: {
 
   useEffect(() => {
     // Unlike radius, the scale carries no "absence means default" meaning:
-    // the shipped default is a concrete non-default density (`xl`), so the
+    // the shipped default is a concrete non-default density (`lg`), so the
     // concrete value always has to reach CSS. `'default'` is still a valid
     // choice and simply has no rule, falling back to Tailwind's own scale.
     applyAttribute('data-theme-scale', scale)

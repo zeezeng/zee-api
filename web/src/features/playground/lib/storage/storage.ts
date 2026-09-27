@@ -17,7 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { MESSAGE_STATUS, STORAGE_KEYS } from '../../constants'
-import type { PlaygroundConfig, ParameterEnabled, Message } from '../../types'
+import type {
+  PlaygroundConfig,
+  ParameterEnabled,
+  Message,
+  ImageGenerationConfig,
+  PlaygroundMode,
+} from '../../types'
 import {
   finalizeMessage,
   isAssistantMessagePending,
@@ -31,9 +37,11 @@ import {
   MAX_STORED_MESSAGES,
   MAX_STORED_MESSAGES_BYTES,
   STORAGE_VERSION,
+  imageConfigSchema,
   messagesSchema,
   parameterEnabledSchema,
   playgroundConfigSchema,
+  playgroundModeSchema,
 } from './storage-schema'
 
 type StoredEnvelope<T> = {
@@ -384,6 +392,63 @@ export function saveMessages(messages: Message[]): void {
 }
 
 /**
+ * Load image generation config from localStorage
+ */
+export function loadImageConfig(): Partial<ImageGenerationConfig> {
+  try {
+    const saved = readStoredValue(STORAGE_KEYS.IMAGE_CONFIG)
+    if (!saved) return {}
+
+    return imageConfigSchema.parse(unwrapStoredValue(saved))
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to load image config:', error)
+  }
+  return {}
+}
+
+/**
+ * Save image generation config to localStorage
+ */
+export function saveImageConfig(config: Partial<ImageGenerationConfig>): void {
+  try {
+    const parsed = imageConfigSchema.parse(config)
+    writeStoredValue(STORAGE_KEYS.IMAGE_CONFIG, parsed)
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to save image config:', error)
+  }
+}
+
+/**
+ * Load the last used playground mode
+ */
+export function loadPlaygroundMode(): PlaygroundMode | null {
+  try {
+    const saved = readStoredValue(STORAGE_KEYS.MODE)
+    if (!saved) return null
+
+    return playgroundModeSchema.parse(unwrapStoredValue(saved))
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to load playground mode:', error)
+  }
+  return null
+}
+
+/**
+ * Save the playground mode
+ */
+export function savePlaygroundMode(mode: PlaygroundMode): void {
+  try {
+    writeStoredValue(STORAGE_KEYS.MODE, playgroundModeSchema.parse(mode))
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to save playground mode:', error)
+  }
+}
+
+/**
  * Clear all playground data
  */
 export function clearPlaygroundData(): void {
@@ -391,6 +456,8 @@ export function clearPlaygroundData(): void {
     localStorage.removeItem(STORAGE_KEYS.CONFIG)
     localStorage.removeItem(STORAGE_KEYS.PARAMETER_ENABLED)
     localStorage.removeItem(STORAGE_KEYS.MESSAGES)
+    localStorage.removeItem(STORAGE_KEYS.IMAGE_CONFIG)
+    localStorage.removeItem(STORAGE_KEYS.MODE)
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Failed to clear playground data:', error)
